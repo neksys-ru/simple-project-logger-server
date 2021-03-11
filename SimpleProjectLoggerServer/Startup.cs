@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace SimpleProjectLoggerServer
 {
@@ -26,7 +27,9 @@ namespace SimpleProjectLoggerServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            string con = "Host=localhost;Port=5432;Database=spl;Username=spl;Password=secret";
+            // устанавливаем контекст данных
+            services.AddDbContext<Models.UserContext>(options => options.UseNpgsql(con));
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
