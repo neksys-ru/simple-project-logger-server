@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SimpleProjectLoggerServer.Models;
+using SimpleProjectLoggerServer.Service;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,22 +14,31 @@ namespace SimpleProjectLoggerServer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "admin")]
     public class UserController : ControllerBase
     {
 
         UserContext db;
+        IPassHasher _hasher;
         public UserController(UserContext context)
         {
             db = context;
+            _hasher = new PasswordHasher();
             if (!db.Users.Any())
             {
-                db.Users.Add(new User { Name = "Tom", Age = 26 });
-                db.Users.Add(new User { Name = "Alice", Age = 31 });
+                Role admin = new Role { Name = "admin"};
+                Role ruser = new Role { Name = "user"};
+                db.Roles.Add(admin);
+                User user = new User { Name = "Tom", Email="admin@neksys.ru", Password = _hasher.GeneratePasswordHash("secret"),Role=admin };
+                User user2 = new User { Name = "Tomas",Email="info@neksys.ru", Password = _hasher.GeneratePasswordHash("secret"), Role=ruser };
+                db.Users.Add(user);
+                db.Users.Add(user2);
                 db.SaveChanges();
             }
         }
 
         // GET: api/<UserController>
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> Get()
         {
@@ -52,7 +63,7 @@ namespace SimpleProjectLoggerServer.Controllers
             {
                 return BadRequest();
             }
-
+            user.Password = _hasher.GeneratePasswordHash(user.Password);
             db.Users.Add(user);
             await db.SaveChangesAsync();
             return Ok(user);
@@ -70,7 +81,7 @@ namespace SimpleProjectLoggerServer.Controllers
             {
                 return NotFound();
             }
-
+            //TODO password update logic
             db.Update(user);
             await db.SaveChangesAsync();
             return Ok(user);
