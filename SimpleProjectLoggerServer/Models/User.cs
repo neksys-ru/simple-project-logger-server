@@ -16,6 +16,8 @@ namespace SimpleProjectLoggerServer.Models
         public string Password { get; set; }
         public int? RoleId { get; set; }
         public Role Role { get; set; }
+        [JsonIgnore]
+        public List<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     }
     public class LoginViewModel {

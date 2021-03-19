@@ -54,6 +54,7 @@ namespace SimpleProjectLoggerServer
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SimpleProjectLoggerServer", Version = "v1" });
             });
+            services.AddCors();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,6 +73,9 @@ namespace SimpleProjectLoggerServer
 
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseCors(builder => builder.WithOrigins("http://localhost:3000")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod());
 
             app.UseEndpoints(endpoints =>
             {

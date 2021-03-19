@@ -9,6 +9,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using SimpleProjectLoggerServer.Models;
 using SimpleProjectLoggerServer.Service;
+using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 
 namespace SimpleProjectLoggerServer.Controllers
 {
@@ -41,63 +43,128 @@ namespace SimpleProjectLoggerServer.Controllers
         {
             if (ModelState.IsValid)
             {
-                var identity = GetIdentity(model.Username, model.Password);
-                if (identity == null)
-                {
-                    return BadRequest(new { errorText = "Неверный пользователь или пароль" });
-                }
+                
+                User person = db.Users.Include(x=>x.Role).FirstOrDefault(x => x.Email == model.Username);
+                if (person == null) return BadRequest(new { errorText = "Неверный пользователь или пароль" });
+                if (!_hasher.VerifyPasswordHash(model.Password, person.Password)) return BadRequest(new { errorText = "Неверный пользователь или пароль" });
 
-                var now = DateTime.UtcNow;
-                // создаем JWT-токен
-                var jwt = new JwtSecurityToken(
-                        issuer: AuthOptions.ISSUER,
-                        audience: AuthOptions.AUDIENCE,
-                        notBefore: now,
-                        claims: identity.Claims,
-                        expires: now.Add(TimeSpan.FromMinutes(AuthOptions.LIFETIME)),
-                        signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-                var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
+                var identity = GetIdentity(person);
 
+                var encodedJwt = generateJwtToken(identity);
+                var refreshToken = generateRefreshToken(ipAddress());
+                db.RefreshTokens.Add(refreshToken);
+                person.RefreshTokens.Add(refreshToken);
+                //db.Update(person);
+                db.SaveChanges();
                 var response = new
                 {
                     access_token = encodedJwt,
-                    username = identity.Name
+                    refresh_token = refreshToken.Token,
+                    username = identity.Name,
+                    user_id = person.Id
                 };
 
                 return Ok(response);
             }
-            else {
+            else
+            {
                 return BadRequest();
             }
-           
+
         }
-        private ClaimsIdentity GetIdentity(string username, string password)
+        [HttpPost("refresh")]
+        public IActionResult RefreshToken(RefreshTokenModel model)
         {
-            User person = db.Users.FirstOrDefault(x => x.Email == username);
-            if (person != null)
+            if (ModelState.IsValid)
             {
-                if (_hasher.VerifyPasswordHash(password, person.Password))
+                //var user = db.Users.SingleOrDefault(u => u.RefreshTokens.Any(t=> t.Token ==model.Token));
+                var refreshToken = db.RefreshTokens.Include(t=>t.User.Role).FirstOrDefault(t => t.Token == model.Token);
+
+                // return null if no user found with token
+                if (refreshToken == null) return BadRequest(new { errorText = "Token is missing" });
+
+                var user = refreshToken.User;
+
+                // return null if token is no longer active
+                if (refreshToken.IsExpired) return BadRequest(new { errorText = "Token is expired" });
+
+                // replace old refresh token with a new one and save
+                var newRefreshToken = generateRefreshToken(ipAddress());
+
+                db.Remove(refreshToken);
+                db.RefreshTokens.Add(newRefreshToken);
+                user.RefreshTokens.Add(newRefreshToken);
+                //db.Update(user);
+                db.SaveChanges();
+
+                // generate new jwt
+                var identity = GetIdentity(user);
+                var jwtToken = generateJwtToken(identity);
+
+                var response = new
                 {
-                    var claims = new List<Claim>
+                    access_token = jwtToken,
+                    refresh_token = newRefreshToken.Token,
+                    username = identity.Name,
+                    user_id = user.Id
+                };
+
+                return Ok(response);
+            }
+            else
+            {
+                return BadRequest(new { errorText = "Wrong data supported" });
+            }
+        }
+        private ClaimsIdentity GetIdentity(User person)
+        {
+
+            var claims = new List<Claim>
                 {
                     new Claim(ClaimsIdentity.DefaultNameClaimType, person.Email),
-                    new Claim(ClaimTypes.NameIdentifier, person.Id.ToString()),
-                    new Claim(ClaimTypes.Name, person.Name),
                     new Claim(ClaimsIdentity.DefaultRoleClaimType, person.Role?.Name)
                 };
-                    ClaimsIdentity claimsIdentity =
-                    new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType,
-                        ClaimsIdentity.DefaultRoleClaimType);
-                    return claimsIdentity;
-                }
-                else {
-                    return null;
-                }
-                
-            }
+            ClaimsIdentity claimsIdentity =
+            new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType,
+                ClaimsIdentity.DefaultRoleClaimType);
+            return claimsIdentity;
 
-            // если пользователя не найдено
-            return null;
+        }
+        private string generateJwtToken(ClaimsIdentity identity)
+        {
+            var now = DateTime.UtcNow;
+            // создаем JWT-токен
+            var jwt = new JwtSecurityToken(
+                    issuer: AuthOptions.ISSUER,
+                    audience: AuthOptions.AUDIENCE,
+                    notBefore: now,
+                    claims: identity.Claims,
+                    expires: now.Add(TimeSpan.FromMinutes(AuthOptions.LIFETIME)),
+                    signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+            return new JwtSecurityTokenHandler().WriteToken(jwt);
+        }
+        private RefreshToken generateRefreshToken(string ipAddress)
+        {
+            var now = DateTime.UtcNow;
+            using (var rngCryptoServiceProvider = new RNGCryptoServiceProvider())
+            {
+                var randomBytes = new byte[64];
+                rngCryptoServiceProvider.GetBytes(randomBytes);
+                return new RefreshToken
+                {
+                    Token = Convert.ToBase64String(randomBytes),
+                    Created = now,
+                    Expires = now.Add(TimeSpan.FromMinutes(AuthOptions.LIFETIME_REFRESH)),
+                    IpAddress = ipAddress
+                };
+            }
+        }
+        private string ipAddress()
+        {
+            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+                return Request.Headers["X-Forwarded-For"];
+            else
+                return HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
         }
     }
 }

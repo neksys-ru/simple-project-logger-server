@@ -10,9 +10,10 @@ namespace SimpleProjectLoggerServer.Models
     {
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         public UserContext(DbContextOptions<UserContext> options):base(options)
         {
-            Database.EnsureDeleted();
+            //Database.EnsureDeleted();
             Database.EnsureCreated();
         }
     }

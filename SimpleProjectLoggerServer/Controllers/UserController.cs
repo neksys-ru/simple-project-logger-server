@@ -24,7 +24,7 @@ namespace SimpleProjectLoggerServer.Controllers
         {
             db = context;
             _hasher = new PasswordHasher();
-            if (!db.Users.Any())
+            /*if (!db.Users.Any())
             {
                 Role admin = new Role { Name = "admin"};
                 Role ruser = new Role { Name = "user"};
@@ -34,7 +34,7 @@ namespace SimpleProjectLoggerServer.Controllers
                 db.Users.Add(user);
                 db.Users.Add(user2);
                 db.SaveChanges();
-            }
+            }*/
         }
 
         // GET: api/<UserController>
