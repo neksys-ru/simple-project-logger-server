@@ -32,7 +32,7 @@ namespace SimpleProjectLoggerServer
         {
             string con = Configuration.GetConnectionString("DefaultConnection");
             // устанавливаем контекст данных
-            services.AddDbContext<Models.UserContext>(options => options.UseNpgsql(con));
+            services.AddDbContext<Models.AppDataContext>(options => options.UseNpgsql(con));
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     .AddJwtBearer(options =>

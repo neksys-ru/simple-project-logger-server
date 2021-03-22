@@ -19,9 +19,9 @@ namespace SimpleProjectLoggerServer.Controllers
     public class AuthController : ControllerBase
     {
 
-        UserContext db;
+        AppDataContext db;
         IPassHasher _hasher;
-        public AuthController(UserContext context)
+        public AuthController(AppDataContext context)
         {
             db = context;
             _hasher = new PasswordHasher();

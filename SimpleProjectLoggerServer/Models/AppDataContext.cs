@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SimpleProjectLoggerServer.Models
 {
-    public class UserContext : DbContext
+    public class AppDataContext : DbContext
     {
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public UserContext(DbContextOptions<UserContext> options):base(options)
+        public AppDataContext(DbContextOptions<AppDataContext> options):base(options)
         {
             //Database.EnsureDeleted();
             Database.EnsureCreated();
