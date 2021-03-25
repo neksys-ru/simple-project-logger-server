@@ -5,10 +5,8 @@ using System.Threading.Tasks;
 
 namespace SimpleProjectLoggerServer.Models
 {
-    public class Entity
+    public class TaggedOwnedEntity:OwnedEntity
     {
-        public int Id { get; set; }
-        public DateTime Created { get; set; }
-        public DateTime Updated { get; set; }
+        public List<Tag> Tags { get; set; } = new List<Tag>();
     }
 }

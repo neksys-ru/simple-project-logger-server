@@ -27,13 +27,14 @@ namespace SimpleProjectLoggerServer.Controllers
             _hasher = new PasswordHasher();
             if (!db.Users.Any())
             {
-                Role admin = new Role { Name = "admin" };
-                Role ruser = new Role { Name = "user" };
-                db.Roles.Add(admin);
-                User user = new User { Name = "Tom", Email = "admin@neksys.ru", Password = _hasher.GeneratePasswordHash("secret"), Role = admin };
-                User user2 = new User { Name = "Tomas", Email = "info@neksys.ru", Password = _hasher.GeneratePasswordHash("secret"), Role = ruser };
-                db.Users.Add(user);
-                db.Users.Add(user2);
+                Role admin = new Role { Name = "admin", Order = 100 };
+                Role user = new Role { Name = "user", Order = 50 };
+                Role guest = new Role { Name = "guest", Order = 10 };
+                db.Roles.AddRange(admin,user,guest);
+                User u1 = new User { Name = "admin", Email = "admin@neksys.ru", Password = _hasher.GeneratePasswordHash("secret"), Role = admin };
+                User u2 = new User { Name = "user", Email = "user@neksys.ru", Password = _hasher.GeneratePasswordHash("secret"), Role = user };
+                User u3 = new User { Name = "guest", Email = "guest@neksys.ru", Password = _hasher.GeneratePasswordHash("secret"), Role = guest };
+                db.Users.AddRange(u1,u2,u3);
                 db.SaveChanges();
             }
         }

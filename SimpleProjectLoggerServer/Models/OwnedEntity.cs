@@ -1,12 +1,11 @@
-﻿using SimpleProjectLoggerServer.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SimpleProjectLoggerServer.Interfaces
+namespace SimpleProjectLoggerServer.Models
 {
-    interface IOwned
+    public class OwnedEntity:Entity
     {
         public int? UserId { get; set; }
         public User User { get; set; }

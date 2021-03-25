@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SimpleProjectLoggerServer.Models;
 
-namespace SimpleProjectLoggerServer.Interfaces
+namespace SimpleProjectLoggerServer.Models
 {
-    interface IDataEntity
+    public class ProjectStatus:Entity
     {
-        public int Id { get; set; }
         public string Name { get; set; }
-
+        public List<Project> Projects { get; set; } = new List<Project>();
     }
 }

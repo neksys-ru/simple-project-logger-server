@@ -7,17 +7,18 @@ using System.Threading.Tasks;
 
 namespace SimpleProjectLoggerServer.Models
 {
-    public class User
+    public class User:Entity
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public string Email { get; set; }
         [JsonIgnore]
         public string Password { get; set; }
+        public string ImagePath { get; set; }
         public int? RoleId { get; set; }
         public Role Role { get; set; }
         [JsonIgnore]
         public List<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        public List<Project> Projects { get; set; } = new List<Project>();
 
     }
     public class LoginViewModel {
